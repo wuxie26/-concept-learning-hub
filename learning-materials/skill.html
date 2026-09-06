@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skill · 概念学习资料</title>
+<meta name="description" content="十分钟搞懂 Skill：把"该在何时调、按何流程做"打包成可复用模块的封装，让 AI 在合适的场景自动执行。">
+<style>
+  :root{
+    --brand:#10b981;
+    --brand-2:#6366f1;
+    --bg:#ffffff;
+    --bg-soft:#f8fafc;
+    --bg-card:#ffffff;
+    --text:#0f172a;
+    --text-soft:#475569;
+    --text-mute:#94a3b8;
+    --border:#e2e8f0;
+    --good:#10b981;
+    --bad:#ef4444;
+    --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -12px rgba(16,185,129,.22);
+    --radius:14px;
+    --radius-sm:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b1020;
+      --bg-soft:#0f172a;
+      --bg-card:#0f1c2a;
+      --text:#e2e8f0;
+      --text-soft:#94a3b8;
+      --text-mute:#64748b;
+      --border:#1e293b;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -16px rgba(16,185,129,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:48px 24px 96px}
+  .hero{position:relative;padding:40px 32px;border-radius:24px;
+    background:linear-gradient(135deg,rgba(16,185,129,.10),rgba(99,102,241,.06));
+    border:1px solid var(--border);overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:auto -20% -60% auto;width:60%;height:120%;
+    background:radial-gradient(circle,rgba(16,185,129,.25),transparent 60%);filter:blur(40px);pointer-events:none}
+  .hero h1{margin:0 0 8px;font-size:42px;line-height:1.15;letter-spacing:-.02em}
+  .hero .en{font-size:18px;color:var(--text-soft);margin-bottom:20px;font-style:italic}
+  .hero .def{font-size:20px;color:var(--text);max-width:62ch;margin:0 0 16px}
+  .tags{display:flex;flex-wrap:wrap;gap:8px}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;
+    background:var(--bg-card);border:1px solid var(--border);font-size:13px;color:var(--text-soft)}
+  .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--brand)}
+  h2{font-size:28px;margin:56px 0 16px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  h2::before{content:"";display:inline-block;width:6px;height:24px;border-radius:3px;background:var(--brand)}
+  h3{font-size:18px;margin:24px 0 8px;color:var(--text)}
+  p{margin:0 0 12px;color:var(--text-soft)}
+  ul,ol{margin:0 0 16px;padding-left:22px;color:var(--text-soft)}
+  li{margin:6px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--bg-soft);border:1px solid var(--border);border-radius:6px;
+    padding:1px 6px;font-size:.92em;color:var(--text)}
+  pre{background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:16px;overflow:auto;line-height:1.6}
+  pre code{background:transparent;border:0;padding:0}
+  blockquote{margin:16px 0;padding:12px 18px;border-left:3px solid var(--brand);
+    background:var(--bg-soft);border-radius:0 var(--radius-sm) var(--radius-sm) 0;color:var(--text-soft)}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media (max-width:780px){.grid3{grid-template-columns:1fr}}
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:20px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 8px;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px}
+  .card p{margin:0;font-size:14.5px}
+  .pill{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--brand);color:#fff;font-weight:600}
+
+  .figure{margin:20px 0;padding:18px;background:var(--bg-soft);border:1px solid var(--border);
+    border-radius:var(--radius);text-align:center}
+  .figure svg{max-width:100%;height:auto}
+  .figure figcaption{margin-top:10px;color:var(--text-mute);font-size:13px}
+
+  .example{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px 20px;margin:12px 0;box-shadow:var(--shadow);position:relative}
+  .example .lvl{position:absolute;top:-10px;left:16px;background:var(--brand);color:#fff;
+    font-size:12px;padding:2px 10px;border-radius:999px;font-weight:600}
+  .example h3{margin-top:6px}
+
+  .pitfall{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:14px 16px;
+    border:1px dashed var(--border);border-radius:var(--radius-sm);margin:10px 0}
+  .pitfall .x{color:var(--bad);font-weight:700;font-size:20px;line-height:1}
+  .pitfall .t{color:var(--text);font-weight:600;margin-bottom:4px}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--bg-card);
+    border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;font-size:14.5px}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600;color:var(--text)}
+  tr:last-child td{border-bottom:0}
+
+  .quiz{margin:10px 0;padding:16px 18px;background:var(--bg-card);
+    border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .quiz .q{margin:0 0 10px;color:var(--text);font-weight:600}
+  .quiz .opts{margin:0 0 8px;padding-left:20px;color:var(--text-soft)}
+  .quiz .opts li{margin:3px 0;cursor:pointer;list-style:upper-alpha}
+  .quiz .opts li:hover{color:var(--text)}
+  .quiz .reveal{display:none;margin-top:8px;padding:10px 12px;border-radius:var(--radius-sm);
+    background:var(--bg-soft);border-left:3px solid var(--good);font-size:14px}
+  .quiz .showAns{margin-top:4px;font-size:13px;color:var(--brand);background:transparent;border:0;
+    cursor:pointer;padding:0}
+  .quiz .showAns:hover{text-decoration:underline}
+
+  .next a{display:block;padding:14px 18px;border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--bg-card);color:var(--text);text-decoration:none;margin:8px 0;transition:.15s}
+  .next a:hover{border-color:var(--brand);transform:translateY(-1px)}
+
+  footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--border);
+    color:var(--text-mute);font-size:13px;text-align:center}
+  @media print{
+    .hero{background:#fff;border:1px solid #ccc}
+    .card,.example,.quiz,.next a{box-shadow:none;border:1px solid #ccc;background:#fff}
+    .showAns{display:none !important}
+    .reveal{display:block !important;border-left-color:#666}
+    .figure{background:#fff;border:1px solid #ccc}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>Skill <span style="font-size:18px;font-weight:400;color:var(--text-soft)">/ 技能</span></h1>
+    <div class="en">Skill · Capability Package · Reusable Procedure</div>
+    <p class="def">把"<strong>何时该调</strong>、<strong>按何流程做</strong>、<strong>需要哪些知识</strong>"打包成可复用模块的封装，让 AI 在合适的场景自动加载并执行。</p>
+    <div class="tags">
+      <span class="tag"><span class="dot"></span>预计 10 分钟</span>
+      <span class="tag">入门难度</span>
+      <span class="tag">AI · 模块化</span>
+    </div>
+  </header>
+
+  <!-- What / Why / How -->
+  <h2>一句话三连</h2>
+  <div class="grid3">
+    <div class="card"><h3>是什么 <span class="pill">What</span></h3><p>一个 SKILL.md + 可能附带脚本 / 资源的目录。它告诉 AI："这种场景按这套流程办"。</p></div>
+    <div class="card"><h3>为什么重要 <span class="pill">Why</span></h3><p>把"经验"从一次性 prompt 升级为可复用资产。人和团队都可以基于 Skill 共享方法论。</p></div>
+    <div class="card"><h3>怎么写 <span class="pill">How</span></h3><p>YAML frontmatter 描述触发场景，Markdown 正文描述流程与质量基线，必要时附带脚本。</p></div>
+  </div>
+
+  <!-- 核心机制 -->
+  <h2>核心机制：触发 + 流程 + 知识 三合一</h2>
+  <p>Skill 不是一段 prompt，而是一个<strong>能力包</strong>。它把三件事打包在一起：</p>
+  <figure class="figure">
+    <svg viewBox="0 0 720 320" role="img" aria-labelledby="t3 d3">
+      <title id="t3">Skill 的三要素结构</title>
+      <desc id="d3">Skill 由触发条件（YAML frontmatter）、流程描述（Markdown 正文）、可选知识/脚本/资源组成，共同被加载到上下文中。</desc>
+      <g font-family="-apple-system,Segoe UI,sans-serif" font-size="14">
+        <!-- center: skill -->
+        <circle cx="360" cy="160" r="78" fill="#dcfce7" stroke="#10b981" stroke-width="2"/>
+        <text x="360" y="156" text-anchor="middle" font-weight="700" font-size="20" fill="#064e3b">Skill</text>
+        <text x="360" y="180" text-anchor="middle" font-size="13" fill="#475569">SKILL.md</text>
+
+        <!-- three spokes -->
+        <g transform="translate(120,80)">
+          <rect x="-80" y="-26" width="160" height="52" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="0" y="-2" text-anchor="middle" font-weight="700" fill="#78350f">触发</text>
+          <text x="0" y="16" text-anchor="middle" font-size="12" fill="#475569">read_when 关键词</text>
+        </g>
+        <g transform="translate(600,80)">
+          <rect x="-80" y="-26" width="160" height="52" rx="10" fill="#dbeafe" stroke="#0ea5e9" stroke-width="2"/>
+          <text x="0" y="-2" text-anchor="middle" font-weight="700" fill="#0c4a6e">流程</text>
+          <text x="0" y="16" text-anchor="middle" font-size="12" fill="#475569">Markdown 正文</text>
+        </g>
+        <g transform="translate(360,290)">
+          <rect x="-100" y="-22" width="200" height="44" rx="10" fill="#ede9fe" stroke="#6366f1" stroke-width="2"/>
+          <text x="0" y="-2" text-anchor="middle" font-weight="700" fill="#3730a3">知识 / 脚本 / 资源</text>
+          <text x="0" y="14" text-anchor="middle" font-size="12" fill="#475569">scripts/、references/、assets/</text>
+        </g>
+
+        <!-- connecting lines -->
+        <line x1="200" y1="90" x2="290" y2="135" stroke="#94a3b8" stroke-dasharray="4 3"/>
+        <line x1="520" y1="90" x2="430" y2="135" stroke="#94a3b8" stroke-dasharray="4 3"/>
+        <line x1="360" y1="270" x2="360" y2="240" stroke="#94a3b8" stroke-dasharray="4 3"/>
+      </g>
+    </svg>
+    <figcaption>图 1：Skill = 触发条件 + 流程描述 + 可选知识 / 脚本 / 资源</figcaption>
+  </figure>
+
+  <h3>Skill 是怎么被"调起来"的？</h3>
+  <ol>
+    <li>AI 看到当前对话 / 请求。</li>
+    <li>把所有可用 Skill 的 <code>read_when</code> 字段（触发关键词 / 场景描述）与请求做匹配。</li>
+    <li>命中后将 Skill 的正文加载到上下文，按其规定的流程执行。</li>
+    <li>执行完毕后上下文被清理，Skill 不再"常驻"。</li>
+  </ol>
+  <blockquote>Skill 不是"自动运行的后台程序"，而是"<strong>按需加载的方法论文档</strong>"。它有边界、有人类审核的责任、有版本。</blockquote>
+
+  <h3>两类 Skill：User-level vs Project-level</h3>
+  <ul>
+    <li><strong>User-level</strong>：放在 <code>~/.workbuddy/skills/</code>，跨项目共享，例如"我的写作风格偏好"。</li>
+    <li><strong>Project-level</strong>：放在仓库内的 <code>.workbuddy/skills/</code>，随仓库分发，例如"本项目的部署流程"。</li>
+  </ul>
+  <p>冲突时<strong>项目级优先</strong>，因为它对当前项目更具体。</p>
+
+  <!-- 3 个示例 -->
+  <h2>三个递进示例</h2>
+
+  <div class="example">
+    <span class="lvl">L1 · 最小</span>
+    <h3>最简 Skill：只定义触发 + 一段流程</h3>
+    <pre><code>---
+title: friendly-greeting
+summary: 用户开头打招呼时给一个温暖、有名字感的回复
+read_when:
+  - 用户说"你好"、"hi"、"在吗"等寒暄
+---
+
+# friendly-greeting
+
+## 流程
+1. 先用一个问句回应（确认对方意图）。
+2. 如果知道对方名字，用名字招呼。
+3. 主动问"今天想做什么"。
+
+## 不要
+- 不要长篇大论地自我介绍。
+- 不要主动推销功能。</code></pre>
+    <p>这个 Skill 只有 30 行，但已经定义了<strong>何时被调</strong> + <strong>怎么做</strong>。</p>
+  </div>
+
+  <div class="example">
+    <span class="lvl">L2 · 实用</span>
+    <h3>带资源 / 脚本的 Skill：commit 风格统一器</h3>
+    <pre><code>commit-style-enforcer/
+├── SKILL.md           # 主流程描述
+└── scripts/
+    └── check.py       # 自动跑校验</code></pre>
+    <p>SKILL.md 描述规则（提交信息格式、受影响文件清单），<code>scripts/check.py</code> 在每次 commit 前自动跑。AI 收到"帮我提交"请求时，会先看 SKILL.md，再用脚本去校验。</p>
+    <p>这是 Skill 真正强大的地方：<strong>知识 + 流程 + 可执行工具</strong>合一。</p>
+  </div>
+
+  <div class="example">
+    <span class="lvl">L3 · 系统级</span>
+    <h3>项目级 Skill：把团队方法论装进仓库</h3>
+    <p>一个团队的"代码评审 checklist"以前散落在 wiki、Slack、口头相传。新人入职要花一周才能摸清。</p>
+    <p>把它做成项目级 Skill：放在仓库的 <code>.workbuddy/skills/code-review/SKILL.md</code>。从此：</p>
+    <ul>
+      <li>任何 AI 接到"帮我 review 这个 PR"时，会自动按这个清单来。</li>
+      <li>团队 review 风格被版本化，可以一起迭代。</li>
+      <li>新人 PR 第一次就能被同一个标准检查。</li>
+    </ul>
+  </div>
+
+  <!-- 误区 -->
+  <h2>常见误区 / 反直觉点</h2>
+
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"Skill 越多越好"</div>
+      <p>反了。Skill 多了会互相冲突、互相触发、互相覆盖上下文。<strong>一个项目通常 3 ~ 8 个 Skill 就够</strong>。超过这个数量，要先合并 / 重构。</p>
+    </div>
+  </div>
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"Skill 就是一段高级 prompt"</div>
+      <p>不对。Skill 是<strong>文档 + 触发 + 资源 + 责任边界</strong>的总和。一段 prompt 没有触发场景、没有版本、没有负责人；Skill 有。</p>
+    </div>
+  </div>
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"Skill 写好就万事大吉"</div>
+      <p>Skill 是<strong>会过期</strong>的。API 变了、流程改了、工具换名了，Skill 里的旧指令会让 AI 做出错误动作。要把 Skill 视作代码一样维护。</p>
+    </div>
+  </div>
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"Skill 越大越全越好"</div>
+      <p>不对。Skill 是被加载进上下文的，写得太长会挤占对话窗口；写得事无巨细会让 AI 在简单任务上过度反应。<strong>Skill 是手术刀，不是锤子</strong>。</p>
+    </div>
+  </div>
+
+  <!-- 自检题 -->
+  <h2>自检题</h2>
+  <p style="color:var(--text-mute);font-size:13px">点击"显示答案"看解释。</p>
+
+  <div class="quiz">
+    <p class="q">1. 下面哪一项<strong>不是</strong>Skill 的必备要素？</p>
+    <ol class="opts">
+      <li>YAML frontmatter（title / summary / read_when）</li>
+      <li>流程描述的 Markdown 正文</li>
+      <li>对应的 Python 脚本</li>
+      <li>触发场景的明确说明</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：C</strong>。脚本是<strong>可选</strong>资源。许多 Skill 只有 SKILL.md 就够了。必备是触发条件 + 流程描述。</div>
+  </div>
+
+  <div class="quiz">
+    <p class="q">2. 项目级 Skill 和用户级 Skill 同时匹配了一个请求，谁优先？</p>
+    <ol class="opts">
+      <li>用户级（更个人化）</li>
+      <li>项目级（更贴合当前项目）</li>
+      <li>后注册者优先</li>
+      <li>名字长的优先</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。项目级 Skill 优先，因为它是为当前项目专门写的；用户级 Skill 是兜底 / 跨项目的偏好。</div>
+  </div>
+
+  <div class="quiz">
+    <p class="q">3. 下面哪种做法最符合"好 Skill"的标准？</p>
+    <ol class="opts">
+      <li>把所有可能用到的方法都写进 SKILL.md，越全越好</li>
+      <li>流程清晰、边界明确、含质量自检清单</li>
+      <li>和 prompt 一样随手写，写完不维护</li>
+      <li>只描述"要做什么"，不写"不要做什么"</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。好 Skill 像好代码 —— 单一职责、清晰流程、有自检、有"不要做什么"的边界说明。</div>
+  </div>
+
+  <!-- 对比边界 -->
+  <h2>与相邻概念的边界</h2>
+  <table>
+    <thead><tr><th>概念</th><th>核心区别</th></tr></thead>
+    <tbody>
+      <tr><td>Skill vs Prompt</td><td>Prompt 是一次性输入；Skill 是带触发 + 资源 + 维护责任的可复用封装。</td></tr>
+      <tr><td>Skill vs Subagent</td><td>Subagent 是"另一个 AI 实例"被调度；Skill 是"主 Agent 按既定方法办事"的指南。</td></tr>
+      <tr><td>Skill vs Workflow</td><td>Workflow 是预定义步骤序列；Skill 让 AI 自主决定要不要 / 怎么跑这些步骤。</td></tr>
+      <tr><td>Skill vs Plugin</td><td>Plugin 通常指 MCP 工具 / 第三方连接器（Connector），强调外部能力；Skill 是方法论文档，强调流程与判断。</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 延伸 -->
+  <h2>延伸阅读 / 下一步</h2>
+  <div class="next">
+    <a href="agent.html">Agent ←</a>
+    <a href="llm-context.html">大模型的上下文 ←</a>
+    <a href="concept-relationship.html">三概念关系全景图 →</a>
+  </div>
+
+  <footer>
+    本资料由 <code>concept-learning-material-generator</code> Skill 生成 · 单文件、可离线、可打印 · 配色 #10b981
+  </footer>
+</div>
+<script>
+  document.addEventListener('keydown',e=>{
+    if(e.key==='p' && !e.target.matches('input,textarea')){window.print()}
+  });
+</script>
+</body>
+</html>
