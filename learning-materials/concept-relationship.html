@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agent · 上下文 · Skill · 关系全景图</title>
+<meta name="description" content="把 Agent、大模型的上下文、Skill 三个概念放在一张图里，看清它们如何一起工作、谁依赖谁、谁负责什么。">
+<style>
+  :root{
+    --agent:#6366f1;
+    --ctx:#0ea5e9;
+    --skill:#10b981;
+    --bg:#ffffff;
+    --bg-soft:#f8fafc;
+    --bg-card:#ffffff;
+    --text:#0f172a;
+    --text-soft:#475569;
+    --text-mute:#94a3b8;
+    --border:#e2e8f0;
+    --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -12px rgba(99,102,241,.18);
+    --radius:14px;
+    --radius-sm:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b1020;
+      --bg-soft:#0f172a;
+      --bg-card:#111a30;
+      --text:#e2e8f0;
+      --text-soft:#94a3b8;
+      --text-mute:#64748b;
+      --border:#1e293b;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -16px rgba(99,102,241,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:48px 24px 96px}
+  .hero{position:relative;padding:40px 32px;border-radius:24px;
+    background:linear-gradient(135deg,rgba(99,102,241,.10),rgba(14,165,233,.08),rgba(16,185,129,.08));
+    border:1px solid var(--border);overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:auto -20% -60% auto;width:60%;height:120%;
+    background:radial-gradient(circle,rgba(99,102,241,.2),transparent 60%);filter:blur(40px);pointer-events:none}
+  .hero h1{margin:0 0 8px;font-size:42px;line-height:1.15;letter-spacing:-.02em}
+  .hero .en{font-size:18px;color:var(--text-soft);margin-bottom:20px;font-style:italic}
+  .hero .def{font-size:20px;color:var(--text);max-width:64ch;margin:0 0 16px}
+  .tags{display:flex;flex-wrap:wrap;gap:8px}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;
+    background:var(--bg-card);border:1px solid var(--border);font-size:13px;color:var(--text-soft)}
+  .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--agent)}
+  h2{font-size:28px;margin:56px 0 16px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  h2::before{content:"";display:inline-block;width:6px;height:24px;border-radius:3px;background:var(--agent)}
+  h3{font-size:18px;margin:24px 0 8px;color:var(--text)}
+  p{margin:0 0 12px;color:var(--text-soft)}
+  ul,ol{margin:0 0 16px;padding-left:22px;color:var(--text-soft)}
+  li{margin:6px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--bg-soft);border:1px solid var(--border);border-radius:6px;
+    padding:1px 6px;font-size:.92em;color:var(--text)}
+  pre{background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:16px;overflow:auto;line-height:1.6}
+  pre code{background:transparent;border:0;padding:0}
+  blockquote{margin:16px 0;padding:12px 18px;border-left:3px solid var(--agent);
+    background:var(--bg-soft);border-radius:0 var(--radius-sm) var(--radius-sm) 0;color:var(--text-soft)}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media (max-width:780px){.grid3{grid-template-columns:1fr}}
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:20px;box-shadow:var(--shadow);position:relative}
+  .card h3{margin:0 0 8px;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px}
+  .card p{margin:0;font-size:14.5px}
+  .pill{font-size:12px;padding:2px 8px;border-radius:999px;color:#fff;font-weight:600}
+  .pill.agent{background:var(--agent)}
+  .pill.ctx{background:var(--ctx)}
+  .pill.skill{background:var(--skill)}
+
+  .figure{margin:20px 0;padding:18px;background:var(--bg-soft);border:1px solid var(--border);
+    border-radius:var(--radius);text-align:center}
+  .figure svg{max-width:100%;height:auto}
+  .figure figcaption{margin-top:10px;color:var(--text-mute);font-size:13px}
+
+  .scenario{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:20px;margin:14px 0;box-shadow:var(--shadow)}
+  .scenario .stage{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;
+    color:#fff;font-weight:600;margin-bottom:10px}
+  .scenario .stage.s1{background:var(--agent)}
+  .scenario .stage.s2{background:var(--ctx)}
+  .scenario .stage.s3{background:var(--skill)}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--bg-card);
+    border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;font-size:14.5px}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600;color:var(--text)}
+  tr:last-child td{border-bottom:0}
+
+  .quiz{margin:10px 0;padding:16px 18px;background:var(--bg-card);
+    border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .quiz .q{margin:0 0 10px;color:var(--text);font-weight:600}
+  .quiz .opts{margin:0 0 8px;padding-left:20px;color:var(--text-soft)}
+  .quiz .opts li{margin:3px 0;cursor:pointer;list-style:upper-alpha}
+  .quiz .opts li:hover{color:var(--text)}
+  .quiz .reveal{display:none;margin-top:8px;padding:10px 12px;border-radius:var(--radius-sm);
+    background:var(--bg-soft);border-left:3px solid var(--skill);font-size:14px}
+  .quiz .showAns{margin-top:4px;font-size:13px;color:var(--agent);background:transparent;border:0;
+    cursor:pointer;padding:0}
+  .quiz .showAns:hover{text-decoration:underline}
+
+  .next a{display:flex;align-items:center;gap:14px;padding:16px 20px;border:1px solid var(--border);
+    border-radius:var(--radius);background:var(--bg-card);color:var(--text);text-decoration:none;
+    margin:8px 0;transition:.15s}
+  .next a:hover{border-color:var(--agent);transform:translateY(-1px)}
+  .next .arrow{margin-left:auto;font-size:20px;color:var(--text-mute)}
+
+  footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--border);
+    color:var(--text-mute);font-size:13px;text-align:center}
+  @media print{
+    .hero{background:#fff;border:1px solid #ccc}
+    .card,.scenario,.quiz,.next a{box-shadow:none;border:1px solid #ccc;background:#fff}
+    .showAns{display:none !important}
+    .reveal{display:block !important;border-left-color:#666}
+    .figure{background:#fff;border:1px solid #ccc}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>三概念关系全景图</h1>
+    <div class="en">Agent · LLM Context · Skill</div>
+    <p class="def">Agent 是"<strong>做事的方式</strong>"（带闭环），上下文是"<strong>做事时的输入</strong>"（一次能看见的全部），Skill 是"<strong>做事的方法论</strong>"（按需加载的流程包）。三者一起，构成了现代 LLM 应用的内核。</p>
+    <div class="tags">
+      <span class="tag"><span class="dot"></span>预计 8 分钟</span>
+      <span class="tag">概念串联</span>
+      <span class="tag">AI 系统设计</span>
+    </div>
+  </header>
+
+  <!-- 全景图 -->
+  <h2>一张图看清三者关系</h2>
+  <figure class="figure">
+    <svg viewBox="0 0 920 460" role="img" aria-labelledby="tR dR">
+      <title id="tR">Agent / 上下文 / Skill 三者协作关系图</title>
+      <desc id="dR">Agent 运行时不停读写上下文；Skill 在被触发时被加载到上下文；Agent 决定何时 / 是否调用 Skill。</desc>
+      <g font-family="-apple-system,Segoe UI,sans-serif" font-size="14">
+
+        <!-- Agent (left, big) -->
+        <g transform="translate(180,230)">
+          <rect x="-150" y="-90" width="300" height="180" rx="18" fill="#eef2ff" stroke="#6366f1" stroke-width="2.5"/>
+          <text x="0" y="-58" text-anchor="middle" font-size="20" font-weight="700" fill="#312e81">Agent</text>
+          <text x="0" y="-38" text-anchor="middle" font-size="12" fill="#475569">做事的方式 / 闭环循环</text>
+          <g font-size="12" fill="#1e293b">
+            <text x="-130" y="-6">· 感知环境</text>
+            <text x="-130" y="14">· 思考决策</text>
+            <text x="-130" y="34">· 采取行动</text>
+            <text x="-130" y="54">· 观察结果 → 下一轮</text>
+          </g>
+          <text x="0" y="76" text-anchor="middle" font-size="11" fill="#94a3b8">负责：节奏与目标</text>
+        </g>
+
+        <!-- Context Window (center, big) -->
+        <g transform="translate(480,230)">
+          <rect x="-130" y="-90" width="260" height="180" rx="18" fill="#e0f2fe" stroke="#0ea5e9" stroke-width="2.5"/>
+          <text x="0" y="-58" text-anchor="middle" font-size="20" font-weight="700" fill="#0c4a6e">LLM 上下文</text>
+          <text x="0" y="-38" text-anchor="middle" font-size="12" fill="#475569">一次推理的全部输入</text>
+          <g font-size="12" fill="#1e293b">
+            <text x="-110" y="-6">[系统] [用户] [助手]</text>
+            <text x="-110" y="14">[工具结果] [Skill 内容]</text>
+            <text x="-110" y="34">[检索片段] [本轮输入]</text>
+          </g>
+          <text x="0" y="76" text-anchor="middle" font-size="11" fill="#94a3b8">负责：传递与约束</text>
+        </g>
+
+        <!-- Skill (right, big) -->
+        <g transform="translate(790,230)">
+          <rect x="-110" y="-90" width="220" height="180" rx="18" fill="#dcfce7" stroke="#10b981" stroke-width="2.5"/>
+          <text x="0" y="-58" text-anchor="middle" font-size="20" font-weight="700" fill="#064e3b">Skill</text>
+          <text x="0" y="-38" text-anchor="middle" font-size="12" fill="#475569">方法论文档</text>
+          <g font-size="12" fill="#1e293b">
+            <text x="-90" y="-6">· 触发 read_when</text>
+            <text x="-90" y="14">· 流程 / 边界</text>
+            <text x="-90" y="34">· 自检 / 资源</text>
+          </g>
+          <text x="0" y="76" text-anchor="middle" font-size="11" fill="#94a3b8">负责：经验沉淀</text>
+        </g>
+
+        <!-- arrows -->
+        <!-- Agent -> Context (writes) -->
+        <path d="M 335 200 L 350 200" stroke="#6366f1" stroke-width="2" fill="none"/>
+        <text x="343" y="192" text-anchor="middle" font-size="11" fill="#475569">读写</text>
+        <path d="M 345 230 Q 400 230 345 230" stroke="#6366f1" stroke-width="2" fill="none" marker-end="url(#arrA)"/>
+
+        <!-- Context -> Agent (reads) -->
+        <path d="M 345 270 Q 290 270 345 270" stroke="#0ea5e9" stroke-width="2" fill="none" marker-end="url(#arrC)"/>
+        <text x="345" y="288" text-anchor="middle" font-size="11" fill="#475569">提供输入</text>
+
+        <!-- Context -> Skill (loads) -->
+        <path d="M 610 200 Q 680 200 680 200" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrS)"/>
+        <text x="660" y="192" text-anchor="middle" font-size="11" fill="#475569">加载到</text>
+
+        <!-- Skill -> Agent (called by) -->
+        <path d="M 680 280 Q 420 380 330 290" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrS2)" stroke-dasharray="6 4"/>
+        <text x="500" y="400" text-anchor="middle" font-size="11" fill="#475569">Agent 在合适场景调用 Skill</text>
+
+        <defs>
+          <marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6366f1"/></marker>
+          <marker id="arrC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0ea5e9"/></marker>
+          <marker id="arrS" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#10b981"/></marker>
+          <marker id="arrS2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#10b981"/></marker>
+        </defs>
+      </g>
+    </svg>
+    <figcaption>图 1：Agent 主导节奏，不停读写上下文；Skill 是被 Agent 视情况"召入"上下文的方法论；上下文是连接三者的信息通道。</figcaption>
+  </figure>
+
+  <h3>一句话总结三者</h3>
+  <ul>
+    <li><strong>Agent</strong>：做什么、按什么节奏做。</li>
+    <li><strong>上下文</strong>：做的过程中"看得见"什么。</li>
+    <li><strong>Skill</strong>：在合适场景下，把方法论"塞进"上下文。</li>
+  </ul>
+
+  <!-- 一起跑：3 个真实场景 -->
+  <h2>三个一起跑的场景</h2>
+
+  <div class="scenario">
+    <span class="stage s1">场景 A · 单轮问答</span>
+    <h3>用户问"上海今天要带伞吗"</h3>
+    <p><strong>Skill</strong>：没有命中任何 Skill（普通问答不需要方法论）。</p>
+    <p><strong>上下文</strong>：只包含系统提示 + 用户消息。</p>
+    <p><strong>Agent</strong>：因为这是个一次性回答（不需要看自己行动的结果），其实走的是开环模式 —— 这也是为什么"带伞"这种问题用不用 Agent 框架差别不大。</p>
+  </div>
+
+  <div class="scenario">
+    <span class="stage s2">场景 B · 单 Skill 介入</span>
+    <h3>用户："帮我按团队规范提交代码"</h3>
+    <p><strong>Skill</strong>：<code>commit-style-enforcer</code> 被命中，加载到上下文。</p>
+    <p><strong>上下文</strong>：系统提示 + Skill 全文 + 当前 git diff + 用户消息。</p>
+    <p><strong>Agent</strong>：按 Skill 规定的"先校验 → 再 commit"流程跑，跑完报告结果。Skill 给出方法，Agent 负责执行与节奏。</p>
+  </div>
+
+  <div class="scenario">
+    <span class="stage s3">场景 C · 多 Skill + 工具 + 长上下文</span>
+    <h3>用户："帮我调研 X 技术，输出对比报告"</h3>
+    <p><strong>Skill</strong>：<code>research-workflow</code>（调研流程）+ <code>report-template</code>（报告模板），按顺序命中。</p>
+    <p><strong>上下文</strong>：系统 + 两个 Skill + 工具结果（搜索、读取网页）+ 检索片段 + 用户消息。窗口可能跑到 50K+ token。</p>
+    <p><strong>Agent</strong>：循环几十轮：搜索 → 读 → 摘要 → 再搜索 → 写草稿 → 自检 → 给用户。Skill 负责"按什么规范"，Agent 负责"跑几轮、什么时候该停"。</p>
+  </div>
+
+  <!-- 责任分工表 -->
+  <h2>三者各负责什么 / 不负责什么</h2>
+  <table>
+    <thead>
+      <tr><th>概念</th><th>负责</th><th>不负责</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Agent</strong></td>
+        <td>决策节奏、循环次数、何时停、是否调用工具</td>
+        <td>记忆（每次推理都是失忆患者）；工具本身的能力上限</td>
+      </tr>
+      <tr>
+        <td><strong>上下文</strong></td>
+        <td>把这一轮"看得见的信息"完整地交给模型</td>
+        <td>决定哪些信息"应该被看见"（这是上层调用方的责任）</td>
+      </tr>
+      <tr>
+        <td><strong>Skill</strong></td>
+        <td>把团队 / 个人经验沉淀成可复用文档</td>
+        <td>保证每次都被调用（依赖触发机制）；代替工程实现</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 反模式 -->
+  <h2>常见的混淆与反模式</h2>
+
+  <div class="scenario">
+    <span class="stage s1">反模式 1</span>
+    <h3>把"调用 Skill"当成万能解药</h3>
+    <p>期望只要写了 Skill，AI 就一定会在该用它的时候用它。<strong>事实</strong>：Skill 触发依赖 <code>read_when</code> 与请求的语义匹配。如果你的 read_when 写得含糊，AI 会频繁误触发或漏触发。</p>
+    <p><strong>修正</strong>：把 read_when 写成"用户会怎么问"，而不是"它内部做了什么"。</p>
+  </div>
+
+  <div class="scenario">
+    <span class="stage s2">反模式 2</span>
+    <h3>把"上下文管理"完全交给 Agent</h3>
+    <p>认为只要 Agent 够聪明，它会自己管理 token。<strong>事实</strong>：Agent 通常不会主动做截断 / 摘要，token 越界它就崩了。</p>
+    <p><strong>修正</strong>：在系统层做上下文管理（窗口限制、摘要、RAG），把"已清理过的上下文"交给 Agent。</p>
+  </div>
+
+  <div class="scenario">
+    <span class="stage s3">反模式 3</span>
+    <h3>把"Skill 写得越详细越好"</h3>
+    <p>把所有规则都写进 Skill，导致单次加载就吃光上下文窗口。<strong>事实</strong>：Skill 是被加载进上下文的，越长越挤。</p>
+    <p><strong>修正</strong>：Skill 只写"必要规则 + 边界 + 自检"。详细信息放 <code>references/</code> 子目录，按需读取。</p>
+  </div>
+
+  <!-- 自检题 -->
+  <h2>自检题</h2>
+  <p style="color:var(--text-mute);font-size:13px">点击"显示答案"看解释。</p>
+
+  <div class="quiz">
+    <p class="q">1. Agent 跑了几十轮后窗口满了，下面哪种说法最准确？</p>
+    <ol class="opts">
+      <li>Agent 应该自动决定丢掉哪些历史</li>
+      <li>是上下文管理出了问题，应该在系统层做摘要/截断</li>
+      <li>换更大的模型就行</li>
+      <li>让 Skill 自动瘦身</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。上下文管理是系统层的责任。Agent 不擅长"主动忘掉事情"。设计时就要把"清理上下文"的流程做进去。</div>
+  </div>
+
+  <div class="quiz">
+    <p class="q">2. 一个项目级 Skill 应该放在哪里？</p>
+    <ol class="opts">
+      <li>用户家目录 <code>~/.workbuddy/skills/</code></li>
+      <li>项目仓库内的 <code>.workbuddy/skills/&lt;name&gt;/SKILL.md</code></li>
+      <li>随便一个 markdown 文件都行</li>
+      <li>必须打包成 .zip</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。项目级 Skill 放在仓库内的 <code>.workbuddy/skills/&lt;name&gt;/</code>，随仓库分发，团队共享。A 是用户级 Skill 的位置。</div>
+  </div>
+
+  <div class="quiz">
+    <p class="q">3. 下面哪个<strong>不是</strong>三概念协作的必要条件？</p>
+    <ol class="opts">
+      <li>有一个清晰的目标</li>
+      <li>上下文足够装下当前轮次的关键信息</li>
+      <li>有可用的 Skill 或方法论</li>
+      <li>每次都要同时用上三者</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：D</strong>。三者<strong>不是必须同时出现</strong>。简单问答用不上 Agent 框架，普通任务也用不上 Skill。三者各按需取用。</div>
+  </div>
+
+  <!-- 延伸 -->
+  <h2>延伸阅读</h2>
+  <div class="next">
+    <a href="agent.html"><span class="pill agent">Agent</span>能感知环境、自主决策、采取行动 →<span class="arrow">→</span></a>
+    <a href="llm-context.html"><span class="pill ctx">上下文</span>大模型一次推理能看见的全部信息 →<span class="arrow">→</span></a>
+    <a href="skill.html"><span class="pill skill">Skill</span>把方法论打包成可复用模块 →<span class="arrow">→</span></a>
+  </div>
+
+  <footer>
+    本资料由 <code>concept-learning-material-generator</code> Skill 生成 · 串联 Agent / 上下文 / Skill 三个独立页 · 配色三色渐变
+  </footer>
+</div>
+<script>
+  document.addEventListener('keydown',e=>{
+    if(e.key==='p' && !e.target.matches('input,textarea')){window.print()}
+  });
+</script>
+</body>
+</html>
