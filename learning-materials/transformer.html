@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transformer · 概念学习资料</title>
+<meta name="description" content="十分钟搞懂 Transformer：基于自注意力的序列建模架构，含 Q/K/V、多头注意力、位置编码、Encoder-Decoder。">
+<style>
+  :root{
+    --brand:#f59e0b;
+    --brand-2:#6366f1;
+    --bg:#ffffff;
+    --bg-soft:#f8fafc;
+    --bg-card:#ffffff;
+    --text:#0f172a;
+    --text-soft:#475569;
+    --text-mute:#94a3b8;
+    --border:#e2e8f0;
+    --good:#10b981;
+    --bad:#ef4444;
+    --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -12px rgba(245,158,11,.22);
+    --radius:14px;
+    --radius-sm:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b1020;
+      --bg-soft:#0f172a;
+      --bg-card:#1a1308;
+      --text:#e2e8f0;
+      --text-soft:#94a3b8;
+      --text-mute:#64748b;
+      --border:#3a2a08;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -16px rgba(245,158,11,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:48px 24px 96px}
+  .hero{position:relative;padding:40px 32px;border-radius:24px;
+    background:linear-gradient(135deg,rgba(245,158,11,.10),rgba(99,102,241,.06));
+    border:1px solid var(--border);overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:auto -20% -60% auto;width:60%;height:120%;
+    background:radial-gradient(circle,rgba(245,158,11,.25),transparent 60%);filter:blur(40px);pointer-events:none}
+  .hero h1{margin:0 0 8px;font-size:42px;line-height:1.15;letter-spacing:-.02em}
+  .hero .en{font-size:18px;color:var(--text-soft);margin-bottom:20px;font-style:italic}
+  .hero .def{font-size:20px;color:var(--text);max-width:62ch;margin:0 0 16px}
+  .tags{display:flex;flex-wrap:wrap;gap:8px}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;
+    background:var(--bg-card);border:1px solid var(--border);font-size:13px;color:var(--text-soft)}
+  .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--brand)}
+  h2{font-size:28px;margin:56px 0 16px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  h2::before{content:"";display:inline-block;width:6px;height:24px;border-radius:3px;background:var(--brand)}
+  h3{font-size:18px;margin:24px 0 8px;color:var(--text)}
+  p{margin:0 0 12px;color:var(--text-soft)}
+  ul,ol{margin:0 0 16px;padding-left:22px;color:var(--text-soft)}
+  li{margin:6px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--bg-soft);border:1px solid var(--border);border-radius:6px;
+    padding:1px 6px;font-size:.92em;color:var(--text)}
+  pre{background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:16px;overflow:auto;line-height:1.6}
+  pre code{background:transparent;border:0;padding:0}
+  blockquote{margin:16px 0;padding:12px 18px;border-left:3px solid var(--brand);
+    background:var(--bg-soft);border-radius:0 var(--radius-sm) var(--radius-sm) 0;color:var(--text-soft)}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media (max-width:780px){.grid3{grid-template-columns:1fr}}
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:20px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 8px;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px}
+  .card p{margin:0;font-size:14.5px}
+  .pill{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--brand);color:#fff;font-weight:600}
+
+  .figure{margin:20px 0;padding:18px;background:var(--bg-soft);border:1px solid var(--border);
+    border-radius:var(--radius);text-align:center}
+  .figure svg{max-width:100%;height:auto}
+  .figure figcaption{margin-top:10px;color:var(--text-mute);font-size:13px}
+
+  .example{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px 20px;margin:12px 0;box-shadow:var(--shadow);position:relative}
+  .example .lvl{position:absolute;top:-10px;left:16px;background:var(--brand);color:#fff;
+    font-size:12px;padding:2px 10px;border-radius:999px;font-weight:600}
+  .example h3{margin-top:6px}
+
+  .pitfall{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:14px 16px;
+    border:1px dashed var(--border);border-radius:var(--radius-sm);margin:10px 0}
+  .pitfall .x{color:var(--bad);font-weight:700;font-size:20px;line-height:1}
+  .pitfall .t{color:var(--text);font-weight:600;margin-bottom:4px}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--bg-card);
+    border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;font-size:14.5px}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600;color:var(--text)}
+  tr:last-child td{border-bottom:0}
+
+  .quiz{margin:10px 0;padding:16px 18px;background:var(--bg-card);
+    border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .quiz .q{margin:0 0 10px;color:var(--text);font-weight:600}
+  .quiz .opts{margin:0 0 8px;padding-left:20px;color:var(--text-soft)}
+  .quiz .opts li{margin:3px 0;cursor:pointer;list-style:upper-alpha}
+  .quiz .opts li:hover{color:var(--text)}
+  .quiz .reveal{display:none;margin-top:8px;padding:10px 12px;border-radius:var(--radius-sm);
+    background:var(--bg-soft);border-left:3px solid var(--good);font-size:14px}
+  .quiz .showAns{margin-top:4px;font-size:13px;color:var(--brand);background:transparent;border:0;
+    cursor:pointer;padding:0}
+  .quiz .showAns:hover{text-decoration:underline}
+
+  .next a{display:block;padding:14px 18px;border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--bg-card);color:var(--text);text-decoration:none;margin:8px 0;transition:.15s}
+  .next a:hover{border-color:var(--brand);transform:translateY(-1px)}
+
+  footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--border);
+    color:var(--text-mute);font-size:13px;text-align:center}
+  @media print{
+    .hero{background:#fff;border:1px solid #ccc}
+    .card,.example,.quiz,.next a{box-shadow:none;border:1px solid #ccc;background:#fff}
+    .showAns{display:none !important}
+    .reveal{display:block !important;border-left-color:#666}
+    .figure{background:#fff;border:1px solid #ccc}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>Transformer <span style="font-size:18px;font-weight:400;color:var(--text-soft)">/ 自注意力架构</span></h1>
+    <div class="en">Transformer · Self-Attention · Encoder–Decoder</div>
+    <p class="def">一种完全靠<strong>自注意力（self-attention）</strong>建模序列的神经网络架构。它抛弃了循环与卷积，是 GPT / BERT / 几乎所有现代大模型的"骨架"。</p>
+    <div class="tags">
+      <span class="tag"><span class="dot"></span>预计 12 分钟</span>
+      <span class="tag">进阶难度</span>
+      <span class="tag">深度学习 · NLP</span>
+    </div>
+  </header>
+
+  <!-- What / Why / How -->
+  <h2>一句话三连</h2>
+  <div class="grid3">
+    <div class="card"><h3>是什么 <span class="pill">What</span></h3><p>一种"每个 token 同时看其它所有 token"的神经网络，靠注意力权重决定看多少、长程依赖一次到位。</p></div>
+    <div class="card"><h3>为什么重要 <span class="pill">Why</span></h3><p>它是 2017 年以来几乎所有 SOTA 模型的底座：BERT、GPT、T5、ViT、Sora……全都长在 Transformer 之上。</p></div>
+    <div class="card"><h3>怎么实现 <span class="pill">How</span></h3><p>输入 → 嵌入 + 位置编码 → N 层 Encoder/Decoder（每层 = 自注意力 + 前馈网络 + 残差 + LayerNorm） → 输出。</p></div>
+  </div>
+
+  <!-- 核心机制 -->
+  <h2>核心机制：自注意力 + 多头 + 位置编码</h2>
+  <p>Transformer 的灵魂只有三件事，看完它们就懂 80%。</p>
+
+  <figure class="figure">
+    <svg viewBox="0 0 720 360" role="img" aria-labelledby="t1 d1">
+      <title id="t1">Scaled Dot-Product Attention 计算流程</title>
+      <desc id="d1">输入 X 分别乘以 W_Q、W_K、W_V 得到 Q、K、V；Q 与 K 转置相乘，除以 sqrt(d_k)，softmax 得注意力权重，再与 V 相乘得到输出。</desc>
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/>
+        </marker>
+      </defs>
+      <g font-family="-apple-system,Segoe UI,sans-serif" font-size="13">
+        <!-- X -->
+        <rect x="30" y="170" width="60" height="36" rx="6" fill="#fff7ed" stroke="#f59e0b" stroke-width="2"/>
+        <text x="60" y="194" text-anchor="middle" font-weight="700" fill="#7c2d12">X</text>
+
+        <!-- W_Q / W_K / W_V -->
+        <rect x="120" y="50" width="40" height="28" rx="4" fill="#fef3c7" stroke="#f59e0b"/>
+        <text x="140" y="69" text-anchor="middle" font-size="11" fill="#78350f">W_Q</text>
+        <rect x="120" y="170" width="40" height="28" rx="4" fill="#fef3c7" stroke="#f59e0b"/>
+        <text x="140" y="189" text-anchor="middle" font-size="11" fill="#78350f">W_K</text>
+        <rect x="120" y="290" width="40" height="28" rx="4" fill="#fef3c7" stroke="#f59e0b"/>
+        <text x="140" y="309" text-anchor="middle" font-size="11" fill="#78350f">W_V</text>
+
+        <!-- Q K V -->
+        <circle cx="220" cy="64" r="20" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+        <text x="220" y="69" text-anchor="middle" font-weight="700" fill="#7c2d12">Q</text>
+        <circle cx="220" cy="184" r="20" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+        <text x="220" y="189" text-anchor="middle" font-weight="700" fill="#7c2d12">K</text>
+        <circle cx="220" cy="304" r="20" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+        <text x="220" y="309" text-anchor="middle" font-weight="700" fill="#7c2d12">V</text>
+
+        <!-- QK^T -->
+        <rect x="290" y="100" width="100" height="36" rx="6" fill="#fff7ed" stroke="#f59e0b"/>
+        <text x="340" y="123" text-anchor="middle" font-weight="700" fill="#7c2d12">QKᵀ / √dₖ</text>
+
+        <!-- Softmax -->
+        <rect x="430" y="100" width="80" height="36" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+        <text x="470" y="123" text-anchor="middle" font-weight="700" fill="#7c2d12">Softmax</text>
+
+        <!-- ×V -->
+        <rect x="430" y="200" width="80" height="36" rx="6" fill="#fff7ed" stroke="#f59e0b"/>
+        <text x="470" y="223" text-anchor="middle" font-weight="700" fill="#7c2d12">× V</text>
+
+        <!-- Output -->
+        <rect x="600" y="170" width="90" height="36" rx="6" fill="#dcfce7" stroke="#10b981" stroke-width="2"/>
+        <text x="645" y="194" text-anchor="middle" font-weight="700" fill="#064e3b">Output</text>
+
+        <!-- arrows -->
+        <line x1="90" y1="180" x2="118" y2="64" stroke="#94a3b8"/>
+        <line x1="90" y1="188" x2="118" y2="184" stroke="#94a3b8"/>
+        <line x1="90" y1="196" x2="118" y2="304" stroke="#94a3b8"/>
+        <line x1="240" y1="64" x2="288" y2="118" stroke="#f59e0b" marker-end="url(#ar)"/>
+        <line x1="240" y1="184" x2="288" y2="124" stroke="#f59e0b" marker-end="url(#ar)"/>
+        <line x1="390" y1="118" x2="428" y2="118" stroke="#f59e0b" marker-end="url(#ar)"/>
+        <line x1="470" y1="138" x2="470" y2="198" stroke="#f59e0b" marker-end="url(#ar)"/>
+        <line x1="240" y1="304" x2="428" y2="220" stroke="#f59e0b" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+        <line x1="510" y1="218" x2="598" y2="190" stroke="#f59e0b" marker-end="url(#ar)"/>
+
+        <text x="60" y="350" font-size="11" fill="#94a3b8">Attention(Q,K,V) = softmax(QKᵀ/√dₖ) V</text>
+      </g>
+    </svg>
+    <figcaption>图 1：Scaled Dot-Product Attention 的完整计算路径。Q/K/V 是同一输入 X 的三种"投影"。</figcaption>
+  </figure>
+
+  <h3>1. 自注意力（Self-Attention）：每个 token 同时看其它所有 token</h3>
+  <p>对序列中的每个位置，用三个可学习的矩阵 <code>W_Q / W_K / W_V</code> 把它的向量投影成<strong>查询 Q</strong>、<strong>键 K</strong>、<strong>值 V</strong>。然后用 <code>Q · Kᵀ / √dₖ</code> 得到"其它每个位置对当前位置的重要程度"，softmax 后加权求和 V。</p>
+  <blockquote>核心直觉：<strong>"我在意谁"由 Q·K 决定，"我从谁那里拿多少信息"由 softmax 后的权重决定</strong>。整段序列一步到位，没有 RNN 的"逐步传话"。</blockquote>
+
+  <h3>2. 多头注意力（Multi-Head）：并行学多套"关注模式"</h3>
+  <p>单头注意力只能学一种"该看谁"的模式。多头把它切成 <code>h</code> 个子空间（如 8 个），每个头独立算一次注意力，最后拼接。每个头可能学到"看动词"、"看代词指代"、"看距离相近词"等不同模式。</p>
+
+  <h3>3. 位置编码（Positional Encoding）：让模型"知道顺序"</h3>
+  <p>自注意力是<strong>置换不变的</strong> —— 把句子打乱它照样算得动，但没有"第几个字"的概念。位置编码把"位置信息"加到输入 embedding 上，让模型能区分"我打你"和"你打我"。原论文用固定 sin/cos；现在更常用<strong>可学习</strong>或 <strong>RoPE / ALiBi</strong>。</p>
+
+  <h3>4. Encoder / Decoder + 残差 + LayerNorm + FFN</h3>
+  <p>单层 Transformer Block = <code>LayerNorm(x + Attention(LayerNorm(x)))</code> + <code>LayerNorm(x + FFN(LayerNorm(x)))</code>。<strong>残差</strong>让梯度能穿过几十层；<strong>LayerNorm</strong>稳定训练；<strong>FFN</strong>（通常是两层 MLP）给每个位置做非线性变换。</p>
+
+  <!-- 3 个示例 -->
+  <h2>三个递进示例</h2>
+
+  <div class="example">
+    <span class="lvl">L1 · 最小</span>
+    <h3>一句话里的代词指代</h3>
+    <p>句子："<strong>小明</strong>把<strong>苹果</strong>给了<strong>老师</strong>，因为<strong>他</strong>饿了。" 问："他"是谁？</p>
+    <p>自注意力能让"他"在编码时重点看"小明" / "苹果"等词，从而推断出"他"最可能指"小明"。一个 RNN 要逐词扫过去才能做到；Transformer 一步到位。</p>
+    <pre><code>注意力权重（示意）：
+  "他" → "小明"  : 0.62   ← 最高
+  "他" → "苹果"  : 0.18
+  "他" → "老师"  : 0.12
+  "他" → "因为"  : 0.08</code></pre>
+  </div>
+
+  <div class="example">
+    <span class="lvl">L2 · 中等</span>
+    <h3>机器翻译（Encoder-Decoder）</h3>
+    <p>输入 "I love you"（3 个 token），输出 "我爱你"（3 个中文 token）。</p>
+    <pre><code>Encoder（理解输入）：
+  I    → 自注意力看 {I, love, you}
+  love → 自注意力看 {I, love, you}
+  you  → 自注意力看 {I, love, you}
+  →  3 个上下文向量，每个都"知道整句"
+
+Decoder（生成输出）：
+  &lt;BOS&gt; → Cross-Attention 读 Encoder → 预测 "我"
+  "我"  → 掩码自注意力只能看 {&lt;BOS&gt;, 我}
+        → Cross-Attention 读 Encoder
+        → 预测 "爱"
+  "我爱" → ... → 预测 "你"
+  "我爱你" → ... → 预测 &lt;EOS&gt;</code></pre>
+    <p>Decoder 用<strong>掩码自注意力</strong>保证看不到未来；用 <strong>Cross-Attention</strong> 把 Encoder 的信息"读进来"。</p>
+  </div>
+
+  <div class="example">
+    <span class="lvl">L3 · 复杂</span>
+    <h3>GPT 风格 Decoder-only：大规模预训练 + 推理</h3>
+    <p>GPT 只保留 Decoder（去掉 Encoder 和 Cross-Attention），堆 96+ 层，参数上千亿。训练：让模型预测"下一个 token"。推理：给一段 prompt，自回归生成。</p>
+    <p>和原 Transformer 的关键差异：</p>
+    <ul>
+      <li>只有 Decoder，没有 Encoder。</li>
+      <li>掩码自注意力让模型只能看"过去的 token"。</li>
+      <li>位置编码通常用 RoPE（旋转位置编码），更利于长度外推。</li>
+      <li>FFN 层常用 GLU/SwiGLU 变体，参数效率更高。</li>
+    </ul>
+    <p>这是为什么"GPT"能写文章、写代码、写诗 —— Transformer 的灵活骨架让它能装下几乎任何"序列到序列"的分布。</p>
+  </div>
+
+  <!-- 误区 -->
+  <h2>常见误区 / 反直觉点</h2>
+
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"Transformer = 自注意力"</div>
+      <p>不完整。一个 Block 是"自注意力 + FFN + 残差 + LayerNorm"的组合，FFN 占了大部分参数（典型 4× 维度）。</p>
+    </div>
+  </div>
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"注意力权重高 = 这个词最重要"</div>
+      <p>不一定。注意力值还会被 softmax 前的 logits 大小、维度 √dₖ 等影响。解读注意力图要慎重，更可靠的归因方法是用梯度或扰动。</p>
+    </div>
+  </div>
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"自注意力是 O(n²) 所以对长文本很差"</div>
+      <p>训练时确实是 O(n²)；但推理时有 KV Cache 优化，且 FlashAttention、PagedAttention、Linear Attention 等改进让它能跑到百万 token。架构本身没死。</p>
+    </div>
+  </div>
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"Transformer 取代了 RNN，所以 RNN 没用了"</div>
+      <p>在大多数 NLP 场景是的，但在<strong>流式 / 极低延迟 / 设备端</strong>场景，RNN / State Space Model（Mamba 等）仍有结构性的成本优势。</p>
+    </div>
+  </div>
+
+  <!-- 自检题 -->
+  <h2>自检题</h2>
+  <p style="color:var(--text-mute);font-size:13px">点击"显示答案"看解释。</p>
+
+  <div class="quiz">
+    <p class="q">1. 在 Self-Attention 里，Q、K、V 三个矩阵来自哪里？</p>
+    <ol class="opts">
+      <li>三个不同的输入</li>
+      <li>同一个输入 X 分别乘以三个可学习的投影矩阵 W_Q / W_K / W_V</li>
+      <li>随机初始化的固定向量</li>
+      <li>上一层 Encoder 的输出加噪声</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。Q、K、V 都是同一输入 X 的"三种看法"。这就是为什么叫 Self-Attention —— 自己看自己。</div>
+  </div>
+
+  <div class="quiz">
+    <p class="q">2. 为什么要除以 √dₖ？</p>
+    <ol class="opts">
+      <li>让结果更小，省内存</li>
+      <li>防止 Q·Kᵀ 的数值过大导致 softmax 梯度消失</li>
+      <li>只是一种传统，没有实际意义</li>
+      <li>让训练速度翻倍</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。dₖ 大时点积的方差也大，会让 softmax 推向极端分布、梯度消失。除以 √dₖ 是为了让 logits 保持合理尺度。</div>
+  </div>
+
+  <div class="quiz">
+    <p class="q">3. 为什么 Decoder 要用掩码自注意力（masked self-attention）？</p>
+    <ol class="opts">
+      <li>为了节省显存</li>
+      <li>防止模型在训练时偷看未来 token，保持自回归性质</li>
+      <li>因为 Decoder 不需要注意力</li>
+      <li>是为了让训练数据更小</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。训练时如果让模型看到"未来"，就等于把答案提前告诉它。掩码让位置 i 只能看到 ≤i 的位置，匹配推理时的真实场景。</div>
+  </div>
+
+  <div class="quiz">
+    <p class="q">4. 位置编码为什么是必要的，不能省？</p>
+    <ol class="opts">
+      <li>训练数据必须有位置</li>
+      <li>自注意力本身是置换不变的，必须靠位置编码注入顺序信息</li>
+      <li>为了美观</li>
+      <li>位置编码让模型跑得更快</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。Self-Attention 对输入顺序不敏感 —— "猫吃鱼"和"鱼吃猫"算出同样的注意力分布。位置编码给每个 token 加上"它在第几位"的信息。</div>
+  </div>
+
+  <!-- 对比边界 -->
+  <h2>与相邻概念的边界</h2>
+  <table>
+    <thead><tr><th>概念</th><th>核心区别</th></tr></thead>
+    <tbody>
+      <tr><td>Transformer vs RNN / LSTM</td><td>RNN 逐步传话，长程依赖会衰减；Transformer 一步到位看全局，但 O(n²) 计算 / 内存。</td></tr>
+      <tr><td>Transformer vs CNN</td><td>CNN 用固定窗口的局部卷积；Transformer 用全局自注意力，灵活但更贵。</td></tr>
+      <tr><td>Transformer vs State Space Model (Mamba)</td><td>SSM 是 Transformer 的"O(n) 替代品"，对长序列有结构性优势，但生态远不如 Transformer 成熟。</td></tr>
+      <tr><td>Encoder-only vs Decoder-only vs Enc-Dec</td><td>BERT 走 Encoder（理解任务）；GPT 走 Decoder（生成任务）；T5 走 Enc-Dec（翻译类）。</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 延伸 -->
+  <h2>延伸阅读 / 下一步</h2>
+  <div class="next">
+    <a href="agent.html">Agent ←</a>
+    <a href="llm-context.html">大模型的上下文 ←</a>
+    <a href="skill.html">Skill（技能） ←</a>
+    <a href="concept-relationship.html">三概念关系全景图 →</a>
+  </div>
+
+  <footer>
+    本资料由 <code>concept-learning-material-generator</code> Skill 生成（运行命令："用概念学习资料生成 Skill 学一下 Transformer"）· 单文件、可离线、可打印 · 配色 #f59e0b
+  </footer>
+</div>
+<script>
+  document.addEventListener('keydown',e=>{
+    if(e.key==='p' && !e.target.matches('input,textarea')){window.print()}
+  });
+</script>
+</body>
+</html>
