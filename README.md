@@ -28,6 +28,7 @@ concept-learning-hub/
 │   ├── agent.html                    ← Agent 概念学习资料
 │   ├── llm-context.html              ← 大模型的上下文 学习资料
 │   ├── skill.html                    ← Skill 概念学习资料
+│   ├── transformer.html              ← Transformer 学习资料（由本仓库 Skill 生成）
 │   └── concept-relationship.html     ← 三概念关系全景图
 ├── README.md
 └── .gitignore
@@ -101,6 +102,7 @@ learning-materials/<slug>.html
 | [`agent.html`](./learning-materials/agent.html) | Agent / 智能体 | `#6366f1` 靛紫 |
 | [`llm-context.html`](./learning-materials/llm-context.html) | 大模型的上下文 | `#0ea5e9` 天空蓝 |
 | [`skill.html`](./learning-materials/skill.html) | Skill / 技能 | `#10b981` 翠绿 |
+| [`transformer.html`](./learning-materials/transformer.html) | Transformer / 自注意力架构 | `#f59e0b` 琥珀 |
 | [`concept-relationship.html`](./learning-materials/concept-relationship.html) | 三概念关系全景图 | 三色渐变 |
 
 每份资料预计阅读 8 ~ 10 分钟。
