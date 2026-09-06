@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>大模型的上下文 · 概念学习资料</title>
+<meta name="description" content="十分钟搞懂 LLM 的上下文：模型一次推理能看见的全部信息，以及它如何决定模型的"记性"上限。">
+<style>
+  :root{
+    --brand:#0ea5e9;
+    --brand-2:#6366f1;
+    --bg:#ffffff;
+    --bg-soft:#f8fafc;
+    --bg-card:#ffffff;
+    --text:#0f172a;
+    --text-soft:#475569;
+    --text-mute:#94a3b8;
+    --border:#e2e8f0;
+    --good:#10b981;
+    --warn:#f59e0b;
+    --bad:#ef4444;
+    --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -12px rgba(14,165,233,.22);
+    --radius:14px;
+    --radius-sm:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b1020;
+      --bg-soft:#0f172a;
+      --bg-card:#0f1c33;
+      --text:#e2e8f0;
+      --text-soft:#94a3b8;
+      --text-mute:#64748b;
+      --border:#1e293b;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -16px rgba(14,165,233,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:48px 24px 96px}
+  .hero{position:relative;padding:40px 32px;border-radius:24px;
+    background:linear-gradient(135deg,rgba(14,165,233,.10),rgba(99,102,241,.06));
+    border:1px solid var(--border);overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:auto -20% -60% auto;width:60%;height:120%;
+    background:radial-gradient(circle,rgba(14,165,233,.25),transparent 60%);filter:blur(40px);pointer-events:none}
+  .hero h1{margin:0 0 8px;font-size:42px;line-height:1.15;letter-spacing:-.02em}
+  .hero .en{font-size:18px;color:var(--text-soft);margin-bottom:20px;font-style:italic}
+  .hero .def{font-size:20px;color:var(--text);max-width:62ch;margin:0 0 16px}
+  .tags{display:flex;flex-wrap:wrap;gap:8px}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;
+    background:var(--bg-card);border:1px solid var(--border);font-size:13px;color:var(--text-soft)}
+  .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--brand)}
+  h2{font-size:28px;margin:56px 0 16px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  h2::before{content:"";display:inline-block;width:6px;height:24px;border-radius:3px;background:var(--brand)}
+  h3{font-size:18px;margin:24px 0 8px;color:var(--text)}
+  p{margin:0 0 12px;color:var(--text-soft)}
+  ul,ol{margin:0 0 16px;padding-left:22px;color:var(--text-soft)}
+  li{margin:6px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--bg-soft);border:1px solid var(--border);border-radius:6px;
+    padding:1px 6px;font-size:.92em;color:var(--text)}
+  pre{background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:16px;overflow:auto;line-height:1.6}
+  pre code{background:transparent;border:0;padding:0}
+  blockquote{margin:16px 0;padding:12px 18px;border-left:3px solid var(--brand);
+    background:var(--bg-soft);border-radius:0 var(--radius-sm) var(--radius-sm) 0;color:var(--text-soft)}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media (max-width:780px){.grid3{grid-template-columns:1fr}}
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:20px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 8px;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px}
+  .card p{margin:0;font-size:14.5px}
+  .pill{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--brand);color:#fff;font-weight:600}
+
+  .figure{margin:20px 0;padding:18px;background:var(--bg-soft);border:1px solid var(--border);
+    border-radius:var(--radius);text-align:center}
+  .figure svg{max-width:100%;height:auto}
+  .figure figcaption{margin-top:10px;color:var(--text-mute);font-size:13px}
+
+  .example{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px 20px;margin:12px 0;box-shadow:var(--shadow);position:relative}
+  .example .lvl{position:absolute;top:-10px;left:16px;background:var(--brand);color:#fff;
+    font-size:12px;padding:2px 10px;border-radius:999px;font-weight:600}
+  .example h3{margin-top:6px}
+
+  .pitfall{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:14px 16px;
+    border:1px dashed var(--border);border-radius:var(--radius-sm);margin:10px 0}
+  .pitfall .x{color:var(--bad);font-weight:700;font-size:20px;line-height:1}
+  .pitfall .t{color:var(--text);font-weight:600;margin-bottom:4px}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--bg-card);
+    border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;font-size:14.5px}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600;color:var(--text)}
+  tr:last-child td{border-bottom:0}
+
+  .quiz{margin:10px 0;padding:16px 18px;background:var(--bg-card);
+    border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .quiz .q{margin:0 0 10px;color:var(--text);font-weight:600}
+  .quiz .opts{margin:0 0 8px;padding-left:20px;color:var(--text-soft)}
+  .quiz .opts li{margin:3px 0;cursor:pointer;list-style:upper-alpha}
+  .quiz .opts li:hover{color:var(--text)}
+  .quiz .reveal{display:none;margin-top:8px;padding:10px 12px;border-radius:var(--radius-sm);
+    background:var(--bg-soft);border-left:3px solid var(--good);font-size:14px}
+  .quiz .showAns{margin-top:4px;font-size:13px;color:var(--brand);background:transparent;border:0;
+    cursor:pointer;padding:0}
+  .quiz .showAns:hover{text-decoration:underline}
+
+  .next a{display:block;padding:14px 18px;border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--bg-card);color:var(--text);text-decoration:none;margin:8px 0;transition:.15s}
+  .next a:hover{border-color:var(--brand);transform:translateY(-1px)}
+
+  footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--border);
+    color:var(--text-mute);font-size:13px;text-align:center}
+  @media print{
+    .hero{background:#fff;border:1px solid #ccc}
+    .card,.example,.quiz,.next a{box-shadow:none;border:1px solid #ccc;background:#fff}
+    .showAns{display:none !important}
+    .reveal{display:block !important;border-left-color:#666}
+    .figure{background:#fff;border:1px solid #ccc}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>大模型的上下文 <span style="font-size:18px;font-weight:400;color:var(--text-soft)">/ LLM Context</span></h1>
+    <div class="en">Context Window · Prompt · Working Memory</div>
+    <p class="def">大模型在一次推理中<strong>能看见的全部信息</strong>（系统提示、对话历史、工具结果、当前输入）。它的长度与质量，决定了模型的"记性"与"工作记忆"上限。</p>
+    <div class="tags">
+      <span class="tag"><span class="dot"></span>预计 10 分钟</span>
+      <span class="tag">入门难度</span>
+      <span class="tag">LLM · Prompt 工程</span>
+    </div>
+  </header>
+
+  <!-- What / Why / How -->
+  <h2>一句话三连</h2>
+  <div class="grid3">
+    <div class="card"><h3>是什么 <span class="pill">What</span></h3><p>模型"眼前"的所有 token。模型看不到窗口之外的事 —— 它的"记忆"本质就是上下文。</p></div>
+    <div class="card"><h3>为什么重要 <span class="pill">Why</span></h3><p>上下文 = 模型的工作记忆。上下文短，模型就"健忘"；上下文乱，模型就"偏题"。</p></div>
+    <div class="card"><h3>怎么管理 <span class="pill">How</span></h3><p>用 prompt 工程压信息密度，用 RAG 外挂长期记忆，用截断/摘要控制窗口大小。</p></div>
+  </div>
+
+  <!-- 核心机制 -->
+  <h2>核心机制：上下文是一份"长 prompt"</h2>
+  <p>每次调用大模型，API 拿到的就是一个<strong>有序的 token 序列</strong>。模型从前往后读、读完再回答。无论模型内部多复杂，它都"看不见"序列之外的东西。</p>
+
+  <figure class="figure">
+    <svg viewBox="0 0 720 320" role="img" aria-labelledby="t2 d2">
+      <title id="t2">一次 LLM 调用的上下文结构</title>
+      <desc id="d2">从左到右按顺序排列的 token 序列：系统提示、用户消息、助手消息、工具结果，再拼接新用户消息，整体送入模型。</desc>
+      <g font-family="-apple-system,Segoe UI,sans-serif" font-size="13">
+        <!-- bar -->
+        <g transform="translate(40,80)">
+          <rect x="0" y="0" width="100" height="80" rx="8" fill="#e0f2fe" stroke="#0ea5e9" stroke-width="2"/>
+          <text x="50" y="34" text-anchor="middle" font-weight="700" fill="#0c4a6e">系统</text>
+          <text x="50" y="52" text-anchor="middle" fill="#0369a1">System</text>
+          <text x="50" y="68" text-anchor="middle" font-size="11" fill="#475569">角色 / 规则</text>
+        </g>
+        <g transform="translate(150,80)">
+          <rect x="0" y="0" width="110" height="80" rx="8" fill="#dbeafe" stroke="#0ea5e9" stroke-width="2"/>
+          <text x="55" y="34" text-anchor="middle" font-weight="700" fill="#0c4a6e">用户</text>
+          <text x="55" y="52" text-anchor="middle" fill="#0369a1">User</text>
+          <text x="55" y="68" text-anchor="middle" font-size="11" fill="#475569">对话轮次</text>
+        </g>
+        <g transform="translate(270,80)">
+          <rect x="0" y="0" width="110" height="80" rx="8" fill="#ede9fe" stroke="#6366f1" stroke-width="2"/>
+          <text x="55" y="34" text-anchor="middle" font-weight="700" fill="#3730a3">助手</text>
+          <text x="55" y="52" text-anchor="middle" fill="#4f46e5">Assistant</text>
+          <text x="55" y="68" text-anchor="middle" font-size="11" fill="#475569">历史回答</text>
+        </g>
+        <g transform="translate(390,80)">
+          <rect x="0" y="0" width="130" height="80" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="65" y="34" text-anchor="middle" font-weight="700" fill="#78350f">工具</text>
+          <text x="65" y="52" text-anchor="middle" fill="#b45309">Tool</text>
+          <text x="65" y="68" text-anchor="middle" font-size="11" fill="#475569">工具返回结果</text>
+        </g>
+        <g transform="translate(530,80)">
+          <rect x="0" y="0" width="150" height="80" rx="8" fill="#dcfce7" stroke="#10b981" stroke-width="2"/>
+          <text x="75" y="34" text-anchor="middle" font-weight="700" fill="#064e3b">新输入</text>
+          <text x="75" y="52" text-anchor="middle" fill="#059669">User</text>
+          <text x="75" y="68" text-anchor="middle" font-size="11" fill="#475569">本轮用户消息</text>
+        </g>
+        <!-- arrow -->
+        <path d="M 360 200 L 360 230" stroke="#0ea5e9" stroke-width="2" marker-end="url(#arr)" fill="none"/>
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#0ea5e9"/>
+          </marker>
+        </defs>
+        <!-- model box -->
+        <rect x="220" y="240" width="280" height="56" rx="12" fill="#0ea5e9"/>
+        <text x="360" y="266" text-anchor="middle" font-weight="700" fill="#fff" font-size="16">LLM</text>
+        <text x="360" y="284" text-anchor="middle" fill="#e0f2fe" font-size="12">→ 生成下一个 token</text>
+        <!-- label -->
+        <text x="40" y="40" font-size="14" font-weight="600" fill="#0c4a6e">上下文 = 拼接后的完整 token 序列</text>
+      </g>
+    </svg>
+    <figcaption>图 1：一次 LLM 调用时，上下文是按顺序拼接的多类消息。</figcaption>
+  </figure>
+
+  <h3>关键属性</h3>
+  <ul>
+    <li><strong>长度（token 数）</strong>：模型一次能"看见"的总长度，上限叫<em>上下文窗口</em>（常见 8K / 32K / 128K / 1M+）。</li>
+    <li><strong>位置（position）</strong>：模型对开头 / 结尾的信息记忆最强，中间容易"丢"。这就是常说的 <em>lost-in-the-middle</em> 现象。</li>
+    <li><strong>成本</strong>：输入 + 输出都按 token 计费；上下文越长，单次调用越贵、越慢。</li>
+    <li><strong>缓存</strong>：相同前缀可命中缓存（prefix cache），大幅降低重复调用的成本与延迟。</li>
+  </ul>
+  <blockquote>"模型的智能是固定的，但它的'当下表现'完全取决于你塞进上下文的那些内容。" —— 这是理解 LLM 行为最重要的元规则。</blockquote>
+
+  <!-- 3 个示例 -->
+  <h2>三个递进示例</h2>
+
+  <div class="example">
+    <span class="lvl">L1 · 最小</span>
+    <h3>单轮问答：纯当前输入</h3>
+    <pre><code>上下文 = [系统提示] + [用户："把这段话翻译成英文：你好世界"]
+LLM 输出："Hello, world."</code></pre>
+    <p>上下文极小，但已经够用。系统提示设定了"翻译"角色，用户消息提供内容与指令。</p>
+  </div>
+
+  <div class="example">
+    <span class="lvl">L2 · 多轮</span>
+    <h3>多轮对话：让模型"记住"之前说过的话</h3>
+    <pre><code>用户：我叫小明。
+助手：你好，小明。
+用户：帮我介绍一款适合初学者的相机。
+助手：（生成回答）
+用户：刚才那款，价格大概多少？
+助手：（必须看到前面"刚才那款"指的是什么 → 依靠对话历史推断）</code></pre>
+    <p>关键：助手<strong>不能"记住"</strong>，它能"看见"是因为你把所有历史消息都重新拼进了这次调用的上下文。</p>
+  </div>
+
+  <div class="example">
+    <span class="lvl">L3 · 复杂</span>
+    <h3>Agent 上下文：系统提示 + 历史 + 工具结果</h3>
+    <pre><code>系统：你是一个能调用工具的助理，可调用 get_weather。
+用户：上海今天要带伞吗？
+助手：&lt;tool_call&gt; get_weather("Shanghai") &lt;/tool_call&gt;
+工具：上海，中雨，25°C。
+助手：上海今天中雨，建议带伞。</code></pre>
+    <p>这里"上下文"包括<strong>工具调用与工具返回</strong>——模型必须看到工具结果才能给出最终答复。如果工具返回被截断或丢失，模型就只能瞎猜。</p>
+  </div>
+
+  <!-- 误区 -->
+  <h2>常见误区 / 反直觉点</h2>
+
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"上下文窗口越大越好"</div>
+      <p>窗口变大只意味着"能塞更多"。实际表现还受注意力机制影响：很多模型在 32K ~ 128K 中段信息检索能力会下降。窗口长 ≠ 都能用好。</p>
+    </div>
+  </div>
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"模型记住的是事实，不是 token"</div>
+      <p>错。模型没有任何"长期记忆"。它每次调用都是"失忆患者"——你看到它"记得"，是因为上下文里有那段历史。</p>
+    </div>
+  </div>
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"只要 token 没超就行"</div>
+      <p>错。即使没超，"上下文质量"也很关键：冗余信息、矛盾指令、过时的工具结果，都会污染模型判断。</p>
+    </div>
+  </div>
+  <div class="pitfall">
+    <div class="x">✕</div>
+    <div>
+      <div class="t">"System Prompt 越长越详细越好"</div>
+      <p>不一定。System prompt 也是上下文的一部分，写得过长会挤占实际可用空间。建议"必要规则 + 留白"。</p>
+    </div>
+  </div>
+
+  <!-- 自检题 -->
+  <h2>自检题</h2>
+  <p style="color:var(--text-mute);font-size:13px">点击"显示答案"看解释。</p>
+
+  <div class="quiz">
+    <p class="q">1. 模型"忘记"一段 30 分钟前的对话，最准确的原因是？</p>
+    <ol class="opts">
+      <li>模型的时间衰减机制</li>
+      <li>那次对话已经不在当前调用的上下文里了</li>
+      <li>模型的权重没有更新</li>
+      <li>对话被模型主动压缩了</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。LLM 没有跨调用记忆；对话"被忘记"，本质是因为旧消息没被拼进新一次的上下文。</div>
+  </div>
+
+  <div class="quiz">
+    <p class="q">2. 在 200K token 窗口里，把关键事实放在最中间，检索效果会怎样？</p>
+    <ol class="opts">
+      <li>和放在开头一样好</li>
+      <li>通常比放在开头 / 结尾差</li>
+      <li>完全找不到</li>
+      <li>取决于模型温度</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。lost-in-the-middle：长上下文里，模型对首尾信息记忆强，中段最弱。要让模型"看见"重要事实，请尽量靠前或靠后放。</div>
+  </div>
+
+  <div class="quiz">
+    <p class="q">3. Agent 跑了几十轮后 token 即将超限，下面哪种处理最不推荐？</p>
+    <ol class="opts">
+      <li>把早期对话摘要后保留摘要</li>
+      <li>直接丢掉最旧的几轮</li>
+      <li>把工具结果中不再需要的部分清掉</li>
+      <li>把整段对话压成结构化笔记</li>
+    </ol>
+    <button class="showAns" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">显示答案</button>
+    <div class="reveal"><strong>答案：B</strong>。直接丢早期对话风险最大：可能丢掉关键前提或约束，导致后续推理脱轨。摘要 / 结构化笔记 / 工具清理 都是更稳妥的策略。</div>
+  </div>
+
+  <!-- 对比边界 -->
+  <h2>与相邻概念的边界</h2>
+  <table>
+    <thead><tr><th>概念</th><th>核心区别</th></tr></thead>
+    <tbody>
+      <tr><td>上下文 vs 训练数据</td><td>训练数据是模型权重里的"长期知识"；上下文是当下这次推理能看见的"短期信息"。</td></tr>
+      <tr><td>上下文 vs RAG</td><td>RAG 是一种"把外部知识按需塞进上下文"的技术；上下文是更基础的概念，RAG 是它的一种工程实现。</td></tr>
+      <tr><td>上下文 vs 记忆（Memory）</td><td>通常"记忆"指的是跨调用持久化的信息；它最终还是要被注入到上下文里才有用。</td></tr>
+      <tr><td>上下文 vs KV Cache</td><td>KV Cache 是推理引擎对"已计算的 K/V"做的缓存，目的是省算力；和"用户能塞多少 token"是不同维度。</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 延伸 -->
+  <h2>延伸阅读 / 下一步</h2>
+  <div class="next">
+    <a href="agent.html">Agent ←</a>
+    <a href="skill.html">Skill（技能） →</a>
+    <a href="concept-relationship.html">三概念关系全景图 →</a>
+  </div>
+
+  <footer>
+    本资料由 <code>concept-learning-material-generator</code> Skill 生成 · 单文件、可离线、可打印 · 配色 #0ea5e9
+  </footer>
+</div>
+<script>
+  document.addEventListener('keydown',e=>{
+    if(e.key==='p' && !e.target.matches('input,textarea')){window.print()}
+  });
+</script>
+</body>
+</html>
